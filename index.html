@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Multi-Zone Priority Alarm System — Build Guide</title>
+<style>
+  :root{--teal:#006d77;--dark:#1a1a2e;--mid:#16213e;--orange:#ff6b35;--yellow:#ffd166;--green:#06d6a0;--light:#e2f0f1;--gray:#6c757d;--red:#ef233c}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f0f0;color:#212529}
+
+  /* COVER */
+  .cover{background:var(--dark);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;position:relative;overflow:hidden}
+  .cover::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;border:2px solid rgba(6,214,160,0.15);top:-100px;right:-100px}
+  .cover::after{content:'';position:absolute;width:300px;height:300px;border-radius:50%;border:2px solid rgba(255,107,53,0.15);bottom:-80px;left:-80px}
+  .cover-badge{background:var(--orange);color:#fff;font-size:12px;font-weight:800;letter-spacing:3px;padding:6px 20px;border-radius:20px;text-transform:uppercase;margin-bottom:20px;display:inline-block}
+  .cover h1{font-size:3rem;font-weight:900;color:#fff;line-height:1.1;margin-bottom:12px}
+  .cover h1 span{color:var(--green)}
+  .cover-sub{color:rgba(255,255,255,0.65);font-size:1rem;margin-bottom:36px}
+  .cover-stats{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
+  .stat{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px 20px;text-align:center}
+  .stat-num{font-size:1.8rem;font-weight:900;color:var(--green);display:block}
+  .stat-label{font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px}
+  .zone-pills{display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+  .zone-pill{padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700}
+  .z1{background:var(--red);color:#fff}
+  .z2{background:var(--orange);color:#fff}
+  .z3{background:var(--yellow);color:#333}
+
+  /* PAGES */
+  .page{background:#fff;max-width:920px;margin:24px auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.12)}
+  .page-header{background:var(--dark);color:#fff;padding:16px 28px;display:flex;align-items:center;gap:14px}
+  .page-num{background:var(--orange);color:#fff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;flex-shrink:0}
+  .page-title{font-size:1.1rem;font-weight:700}
+  .page-sub{font-size:12px;opacity:0.65;margin-top:2px}
+  .page-body{padding:28px}
+
+  /* PARTS */
+  .parts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px;margin:16px 0}
+  .part-card{border:2px solid #e9ecef;border-radius:12px;padding:14px;text-align:center;background:#fafafa}
+  .part-icon{width:64px;height:64px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center}
+  .part-name{font-weight:700;font-size:13px;color:var(--dark);margin-bottom:4px}
+  .part-qty{background:var(--orange);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:4px}
+  .part-detail{font-size:11px;color:var(--gray)}
+  .part-cost{font-size:12px;font-weight:700;color:var(--teal);margin-top:4px}
+
+  /* STEPS */
+  .step{display:flex;gap:18px;margin-bottom:26px;align-items:flex-start}
+  .step-num{background:var(--orange);color:#fff;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;flex-shrink:0;margin-top:4px}
+  .step-num.green{background:var(--green);color:var(--dark)}
+  .step-content{flex:1}
+  .step-title{font-size:1rem;font-weight:700;color:var(--dark);margin-bottom:6px}
+  .step-body{color:#495057;font-size:14px;line-height:1.7}
+  .step-warn{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:13px;color:#856404;display:flex;align-items:center;gap:8px}
+  .step-tip{background:#d4edda;border:1px solid #c3e6cb;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:13px;color:#155724;display:flex;align-items:center;gap:8px}
+  .step-svg{background:#f8f9fa;border:2px solid #dee2e6;border-radius:12px;margin-top:14px;padding:16px;text-align:center}
+
+  /* TABLES */
+  .truth-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  .truth-table th{background:var(--dark);color:#fff;padding:10px 14px;text-align:center}
+  .truth-table td{border:1px solid #dee2e6;padding:10px 14px;text-align:center}
+  .truth-table tr.zone1 td{background:#ffe5e9;color:var(--red);font-weight:700}
+  .truth-table tr.zone2 td{background:#fff0e8;color:var(--orange);font-weight:700}
+  .truth-table tr.zone3 td{background:#fffde8;color:#856404;font-weight:700}
+  .wire-table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+  .wire-table th{background:var(--teal);color:#fff;padding:8px 14px;text-align:left}
+  .wire-table td{border:1px solid #dee2e6;padding:8px 14px}
+  .wire-table tr:nth-child(even) td{background:#f8f9fa}
+  .logic-table{width:100%;border-collapse:collapse;font-size:13.5px;margin:12px 0}
+  .logic-table th{background:var(--mid);color:#fff;padding:8px 14px;text-align:left}
+  .logic-table td{border:1px solid #dee2e6;padding:8px 14px;font-family:monospace;font-size:13px}
+  .logic-table tr:nth-child(even) td{background:#f8f9fa}
+  .test-table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+  .test-table th{background:var(--green);color:var(--dark);padding:8px 14px;text-align:center;font-weight:700}
+  .test-table td{border:1px solid #dee2e6;padding:8px 14px;text-align:center}
+  .trouble-table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0}
+  .trouble-table th{background:#6c757d;color:#fff;padding:8px 14px;text-align:left}
+  .trouble-table td{border:1px solid #dee2e6;padding:10px 14px;vertical-align:top}
+  .trouble-table tr:nth-child(even) td{background:#f8f9fa}
+
+  /* MISC */
+  .callout{background:var(--light);border-left:5px solid var(--teal);padding:14px 18px;border-radius:0 10px 10px 0;margin:14px 0;font-size:14px}
+  .callout strong{color:var(--teal)}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .checklist li{list-style:none;padding:6px 0;font-size:14px;border-bottom:1px dashed #dee2e6}
+  .checklist li::before{content:'☐ ';color:var(--orange);font-size:16px;font-weight:700}
+  .cost-total{background:var(--dark);color:#fff;padding:16px 24px;border-radius:10px;font-size:1.1rem;font-weight:700;text-align:center;margin:16px 0}
+  .cost-total span{color:var(--green)}
+  .pin-box{background:#f0fff4;border:2px solid var(--green);border-radius:8px;padding:14px;margin:12px 0;font-family:monospace;font-size:13px;line-height:1.8}
+  .priority-block{border:2px solid #dee2e6;border-radius:10px;padding:16px;margin:12px 0}
+  .priority-block h4{font-size:13px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .priority-block .eq{font-family:monospace;font-size:14px;background:#f8f9fa;padding:8px 12px;border-radius:6px;margin-top:8px;display:block}
+
+  @media(max-width:640px){.two-col{grid-template-columns:1fr}.cover h1{font-size:2rem}}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-badge">Electronics Project — Intermediate Level</div>
+  <h1>Multi-Zone<br><span>Priority Alarm</span></h1>
+  <p class="cover-sub">3 zones, smart priority encoding — only the highest-priority triggered zone is displayed</p>
+  <div class="cover-stats">
+    <div class="stat"><span class="stat-num">~$20</span><span class="stat-label">Total Cost</span></div>
+    <div class="stat"><span class="stat-num">2–3 hrs</span><span class="stat-label">Build Time</span></div>
+    <div class="stat"><span class="stat-num">★★☆</span><span class="stat-label">Difficulty</span></div>
+    <div class="stat"><span class="stat-num">3 ICs</span><span class="stat-label">Chips Needed</span></div>
+  </div>
+  <div class="zone-pills">
+    <span class="zone-pill z1">Zone 1 — Highest Priority</span>
+    <span class="zone-pill z2">Zone 2 — Medium Priority</span>
+    <span class="zone-pill z3">Zone 3 — Lowest Priority</span>
+  </div>
+</div>
+
+<!-- PAGE 1 — HOW IT WORKS -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-num">1</div>
+    <div><div class="page-title">How It Works — Priority Encoding Explained</div><div class="page-sub">The clever part of this design</div></div>
+  </div>
+  <div class="page-body">
+    <p style="font-size:15px;margin-bottom:16px">Imagine a hospital triage system: if a critical patient AND a mild patient both arrive, the doctor goes to the critical one first. This circuit does the same thing. If Zone 1 (master bedroom) AND Zone 3 (motion sensor) both trigger simultaneously, only Zone 1's LED lights — Zone 1 wins.</p>
+
+    <div class="step-svg">
+      <svg viewBox="0 0 680 220" width="100%" style="max-width:660px">
+        <!-- Zones in -->
+        <text x="20" y="70" font-size="13" fill="#ef233c" font-weight="bold">Zone 1</text>
+        <text x="20" y="105" font-size="13" fill="#ff6b35" font-weight="bold">Zone 2</text>
+        <text x="20" y="140" font-size="13" fill="#856404" font-weight="bold">Zone 3</text>
+        <line x1="72" y1="65" x2="200" y2="65" stroke="#ef233c" stroke-width="2.5"/>
+        <line x1="72" y1="100" x2="200" y2="100" stroke="#ff6b35" stroke-width="2.5"/>
+        <line x1="72" y1="135" x2="200" y2="135" stroke="#856404" stroke-width="2.5"/>
+        <!-- Priority encoder box -->
+        <rect x="200" y="40" width="160" height="120" rx="10" fill="#1a1a2e" stroke="#006d77" stroke-width="2.5"/>
+        <text x="280" y="90" font-size="13" fill="#06d6a0" text-anchor="middle" font-weight="bold">PRIORITY</text>
+        <text x="280" y="108" font-size="13" fill="#06d6a0" text-anchor="middle" font-weight="bold">ENCODER</text>
+        <text x="280" y="126" font-size="11" fill="#457b9d" text-anchor="middle">Logic Gates</text>
+        <!-- Output lines -->
+        <line x1="360" y1="65" x2="460" y2="65" stroke="#06d6a0" stroke-width="2.5"/>
+        <line x1="360" y1="95" x2="460" y2="95" stroke="#06d6a0" stroke-width="2.5"/>
+        <line x1="360" y1="125" x2="460" y2="125" stroke="#06d6a0" stroke-width="2.5"/>
+        <line x1="360" y1="155" x2="460" y2="155" stroke="#ef233c" stroke-width="2.5"/>
+        <!-- LED outputs -->
+        <circle cx="480" cy="65" r="16" fill="#ef233c" stroke="#c0392b" stroke-width="2"/>
+        <text x="480" y="70" font-size="9" fill="#fff" text-anchor="middle" font-weight="bold">Z1 LED</text>
+        <circle cx="480" cy="95" r="16" fill="#ff6b35" stroke="#d35400" stroke-width="2"/>
+        <text x="480" y="100" font-size="9" fill="#fff" text-anchor="middle" font-weight="bold">Z2 LED</text>
+        <circle cx="480" cy="125" r="16" fill="#ffd166" stroke="#d4a017" stroke-width="2"/>
+        <text x="480" y="130" font-size="9" fill="#333" text-anchor="middle" font-weight="bold">Z3 LED</text>
+        <circle cx="480" cy="155" r="16" fill="#2c2c2c" stroke="#888" stroke-width="2"/>
+        <text x="480" y="151" font-size="8" fill="#fff" text-anchor="middle">ALARM</text>
+        <text x="480" y="162" font-size="8" fill="#fff" text-anchor="middle">LED/BZR</text>
+        <!-- Scenario box -->
+        <rect x="540" y="50" width="130" height="120" rx="8" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1.5"/>
+        <text x="605" y="72" font-size="11" fill="#333" text-anchor="middle" font-weight="bold">If Zone 1+3</text>
+        <text x="605" y="88" font-size="11" fill="#333" text-anchor="middle">trigger together:</text>
+        <circle cx="590" cy="110" r="10" fill="#ef233c"/>
+        <text x="590" y="115" font-size="8" fill="#fff" text-anchor="middle">Z1</text>
+        <text x="615" y="115" font-size="10" fill="#27ae60">✓ ON</text>
+        <circle cx="590" cy="135" r="10" fill="#ccc"/>
+        <text x="590" y="139" font-size="8" fill="#fff" text-anchor="middle">Z3</text>
+        <text x="615" y="139" font-size="10" fill="#ef233c">✗ OFF</text>
+      </svg>
+    </div>
+
+    <h3 style="margin:20px 0 10px;color:var(--dark)">Priority Output Truth Table</h3>
+    <table class="truth-table">
+      <tr><th>Zone 1</th><th>Zone 2</th><th>Zone 3</th><th>Alarm LED</th><th>Z1 LED</th><th>Z2 LED</th><th>Z3 LED</th></tr>
+      <tr><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td><td>OFF</td></tr>
+      <tr class="zone1"><td>ON</td><td>ANY</td><td>ANY</td><td>🔴 ON</td><td>🔴 ON</td><td>OFF</td><td>OFF</td></tr>
+      <tr class="zone2"><td>OFF</td><td>ON</td><td>ANY</td><td>🟠 ON</td><td>OFF</td><td>🟠 ON</td><td>OFF</td></tr>
+      <tr class="zone3"><td>OFF</td><td>OFF</td><td>ON</td><td>🟡 ON</td><td>OFF</td><td>OFF</td><td>🟡 ON</td></tr>
+    </table>
+
+    <div class="callout"><strong>Real-world use:</strong> Zone 1 = Master bedroom door (highest risk). Zone 2 = Living room window. Zone 3 = Motion sensor in hallway (lowest — could be a pet). If the burglar smashes the bedroom door AND triggers the hallway sensor, you see Zone 1 LED — the most important alert.</div>
+  </div>
+</div>
+
+<!-- PAGE 2 — LOGIC EQUATIONS -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-num">2</div>
+    <div><div class="page-title">The Logic — What Equations Drive This</div><div class="page-sub">Don't skip this — understanding = easier debugging</div></div>
+  </div>
+  <div class="page-body">
+    <p style="margin-bottom:16px;font-size:14px">There are 4 outputs. Here is the logic equation for each one and what it means in plain English:</p>
+
+    <div class="priority-block" style="border-color:#ef233c">
+      <h4 style="color:#ef233c">🔴 Alarm Output — Any zone triggered</h4>
+      <code class="eq">Alarm = Zone1 OR Zone2 OR Zone3</code>
+      <p style="font-size:13px;color:#555;margin-top:8px">The alarm LED fires whenever ANY zone is active. Simple OR gate chain.</p>
+    </div>
+
+    <div class="priority-block" style="border-color:#ef233c">
+      <h4 style="color:#ef233c">🔴 Zone 1 LED — Highest priority</h4>
+      <code class="eq">Zone1_LED = Zone1</code>
+      <p style="font-size:13px;color:#555;margin-top:8px">Zone 1 always wins. No masking needed — it lights up whenever Zone 1 is active, regardless of what else is happening. Direct wire from Zone 1 sensor to its LED.</p>
+    </div>
+
+    <div class="priority-block" style="border-color:#ff6b35">
+      <h4 style="color:#ff6b35">🟠 Zone 2 LED — Only if Zone 1 is NOT active</h4>
+      <code class="eq">Zone2_LED = Zone2 AND (NOT Zone1)</code>
+      <p style="font-size:13px;color:#555;margin-top:8px">Zone 2's LED only lights if Zone 2 is triggered AND Zone 1 is NOT triggered. If Zone 1 is ON, Zone 1 steals the display. This needs: 1× NOT gate + 1× AND gate.</p>
+    </div>
+
+    <div class="priority-block" style="border-color:#856404">
+      <h4 style="color:#856404">🟡 Zone 3 LED — Only if BOTH higher zones are NOT active</h4>
+      <code class="eq">Zone3_LED = Zone3 AND (NOT Zone1) AND (NOT Zone2)</code>
+      <p style="font-size:13px;color:#555;margin-top:8px">Zone 3 only displays if it's alone. If Zone 1 or Zone 2 is also active, Zone 3 stays silent. This needs: 2× NOT gates + 2× AND gates.</p>
+    </div>
+
+    <div class="step-svg">
+      <svg viewBox="0 0 680 280" width="100%" style="max-width:660px">
+        <!-- Input signals -->
+        <text x="10" y="55" font-size="12" fill="#ef233c" font-weight="bold">Z1</text>
+        <text x="10" y="120" font-size="12" fill="#ff6b35" font-weight="bold">Z2</text>
+        <text x="10" y="185" font-size="12" fill="#856404" font-weight="bold">Z3</text>
+        <!-- Bus lines -->
+        <line x1="30" y1="50" x2="80" y2="50" stroke="#ef233c" stroke-width="2"/>
+        <line x1="30" y1="115" x2="80" y2="115" stroke="#ff6b35" stroke-width="2"/>
+        <line x1="30" y1="180" x2="80" y2="180" stroke="#856404" stroke-width="2"/>
+
+        <!-- OR Gate (Alarm) -->
+        <rect x="80" y="35" width="55" height="50" rx="4" fill="#1a1a2e" opacity="0.1" stroke="#006d77" stroke-width="1.5"/>
+        <text x="107" y="58" font-size="10" fill="#006d77" text-anchor="middle" font-weight="bold">3-IN</text>
+        <text x="107" y="70" font-size="10" fill="#006d77" text-anchor="middle" font-weight="bold">OR</text>
+        <line x1="135" y1="60" x2="165" y2="60" stroke="#2c2c2c" stroke-width="2"/>
+        <!-- Alarm LED -->
+        <circle cx="182" cy="60" r="14" fill="#2c2c2c" stroke="#555" stroke-width="2"/>
+        <text x="182" y="55" font-size="8" fill="#fff" text-anchor="middle">ALM</text>
+        <text x="182" y="66" font-size="8" fill="#fff" text-anchor="middle">LED</text>
+
+        <!-- Zone1 LED direct -->
+        <line x1="30" y1="50" x2="30" y2="100" stroke="#ef233c" stroke-width="2"/>
+        <line x1="30" y1="100" x2="210" y2="100" stroke="#ef233c" stroke-width="2"/>
+        <circle cx="228" cy="100" r="14" fill="#ef233c" stroke="#c0392b" stroke-width="2"/>
+        <text x="228" y="104" font-size="8" fill="#fff" text-anchor="middle" font-weight="bold">Z1 LED</text>
+
+        <!-- NOT gate for Z1 (for Z2 masking) -->
+        <rect x="80" y="108" width="45" height="22" rx="3" fill="#1a1a2e" opacity="0.15" stroke="#666" stroke-width="1.5"/>
+        <text x="102" y="122" font-size="10" fill="#333" text-anchor="middle" font-weight="bold">NOT</text>
+        <circle cx="128" cy="119" r="3" fill="none" stroke="#333" stroke-width="1.5"/>
+
+        <!-- AND gate for Z2 -->
+        <line x1="131" y1="119" x2="155" y2="119" stroke="#333" stroke-width="1.5"/>
+        <line x1="30" y1="115" x2="30" y2="134" stroke="#ff6b35" stroke-width="2"/>
+        <line x1="30" y1="134" x2="155" y2="134" stroke="#ff6b35" stroke-width="2"/>
+        <rect x="155" y="108" width="55" height="35" rx="4" fill="#1a1a2e" opacity="0.1" stroke="#006d77" stroke-width="1.5"/>
+        <text x="182" y="128" font-size="10" fill="#006d77" text-anchor="middle" font-weight="bold">AND</text>
+        <line x1="210" y1="125" x2="240" y2="125" stroke="#ff6b35" stroke-width="2"/>
+        <circle cx="256" cy="125" r="14" fill="#ff6b35" stroke="#d35400" stroke-width="2"/>
+        <text x="256" y="129" font-size="8" fill="#fff" text-anchor="middle" font-weight="bold">Z2 LED</text>
+
+        <!-- NOT gates for Z1 and Z2 (for Z3 masking) -->
+        <rect x="80" y="165" width="45" height="22" rx="3" fill="#1a1a2e" opacity="0.15" stroke="#666" stroke-width="1.5"/>
+        <text x="102" y="179" font-size="10" fill="#333" text-anchor="middle" font-weight="bold">NOT</text>
+        <circle cx="128" cy="176" r="3" fill="none" stroke="#333" stroke-width="1.5"/>
+
+        <rect x="80" y="193" width="45" height="22" rx="3" fill="#1a1a2e" opacity="0.15" stroke="#666" stroke-width="1.5"/>
+        <text x="102" y="207" font-size="10" fill="#333" text-anchor="middle" font-weight="bold">NOT</text>
+        <circle cx="128" cy="204" r="3" fill="none" stroke="#333" stroke-width="1.5"/>
+
+        <!-- AND chain for Z3 -->
+        <line x1="131" y1="176" x2="145" y2="176" stroke="#333" stroke-width="1.5"/>
+        <line x1="131" y1="204" x2="145" y2="204" stroke="#333" stroke-width="1.5"/>
+        <rect x="145" y="165" width="50" height="48" rx="4" fill="#1a1a2e" opacity="0.1" stroke="#006d77" stroke-width="1.5"/>
+        <text x="170" y="190" font-size="10" fill="#006d77" text-anchor="middle" font-weight="bold">AND</text>
+        <line x1="195" y1="189" x2="215" y2="189" stroke="#333" stroke-width="1.5"/>
+        <line x1="30" y1="180" x2="30" y2="228" stroke="#856404" stroke-width="2"/>
+        <line x1="30" y1="228" x2="215" y2="228" stroke="#856404" stroke-width="2"/>
+        <rect x="215" y="165" width="55" height="48" rx="4" fill="#1a1a2e" opacity="0.1" stroke="#006d77" stroke-width="1.5"/>
+        <text x="242" y="192" font-size="10" fill="#006d77" text-anchor="middle" font-weight="bold">AND</text>
+        <line x1="270" y1="189" x2="298" y2="189" stroke="#856404" stroke-width="2"/>
+        <circle cx="314" cy="189" r="14" fill="#ffd166" stroke="#d4a017" stroke-width="2"/>
+        <text x="314" y="193" font-size="8" fill="#333" text-anchor="middle" font-weight="bold">Z3 LED</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3 — PARTS LIST -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-num">3</div>
+    <div><div class="page-title">Parts List — All Components</div><div class="page-sub">You need 3 ICs this time</div></div>
+  </div>
+  <div class="page-body">
+    <div class="parts-grid">
+      <div class="part-card">
+        <div class="part-icon"><svg viewBox="0 0 70 70" width="70" height="70"><rect x="10" y="18" width="50" height="34" rx="4" fill="#1a1a2e" stroke="#457b9d" stroke-width="2"/><rect x="14" y="22" width="42" height="26" rx="2" fill="#0a1628"/><text x="35" y="36" font-size="8" fill="#a8dadc" text-anchor="middle" font-weight="bold">74HC08</text><text x="35" y="44" font-size="7" fill="#666" text-anchor="middle">AND</text><line x1="10" y1="26" x2="2" y2="26" stroke="#f4a261" stroke-width="2"/><line x1="10" y1="33" x2="2" y2="33" stroke="#f4a261" stroke-width="2"/><line x1="10" y1="40" x2="2" y2="40" stroke="#f4a261" stroke-width="2"/><line x1="60" y1="26" x2="68" y2="26" stroke="#f4a261" stroke-width="2"/><line x1="60" y1="33" x2="68" y2="33" stroke="#f4a261" stroke-width="2"/><line x1="60" y1="40" x2="68" y2="40" stroke="#f4a261" stroke-width="2"/></svg></div>
+        <div class="part-name">74HC08</div><div class="part-qty">×1</div>
+        <div class="part-detail">Quad 2-input AND gate</div><div class="part-cost">~$0.80</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon"><svg viewBox="0 0 70 70" width="70" height="70"><rect x="10" y="18" width="50" height="34" rx="4" fill="#16213e" stroke="#06d6a0" stroke-width="2"/><rect x="14" y="22" width="42" height="26" rx="2" fill="#0a1628"/><text x="35" y="36" font-size="8" fill="#06d6a0" text-anchor="middle" font-weight="bold">74HC32</text><text x="35" y="44" font-size="7" fill="#666" text-anchor="middle">OR</text><line x1="10" y1="26" x2="2" y2="26" stroke="#f4a261" stroke-width="2"/><line x1="10" y1="33" x2="2" y2="33" stroke="#f4a261" stroke-width="2"/><line x1="10" y1="40" x2="2" y2="40" stroke="#f4a261" stroke-width="2"/><line x1="60" y1="26" x2="68" y2="26" stroke="#f4a261" stroke-width="2"/><line x1="60" y1="33" x2="68" y2="33" stroke="#f4a261" stroke-width="2"/><line x1="60" y1="40" x2="68" y2="40" stroke="#f4a261" stroke-width="2"/></svg></div>
+        <div class="part-name">74HC32</div><div class="part-qty">×1</div>
+        <div class="part-detail">Quad 2-input OR gate</div><div class="part-cost">~$0.80</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon"><svg viewBox="0 0 70 70" width="70" height="70"><rect x="10" y="18" width="50" height="34" rx="4" fill="#2c0a37" stroke="#9b59b6" stroke-width="2"/><rect x="14" y="22" width="42" height="26" rx="2" fill="#1a0628"/><text x="35" y="36" font-size="8" fill="#c39bd3" text-anchor="middle" font-weight="bold">74HC04</text><text x="35" y="44" font-size="7" fill="#666" text-anchor="middle">NOT</text><line x1="10" y1="26" x2="2" y2="26" stroke="#f4a261" stroke-width="2"/><line x1="10" y1="33" x2="2" y2="33" stroke="#f4a261" stroke-width="2"/><line x1="60" y1="26" x2="68" y2="26" stroke="#f4a261" stroke-width="2"/><line x1="60" y1="33" x2="68" y2="33" stroke="#f4a261" stroke-width="2"/></svg></div>
+        <div class="part-name">74HC04</div><div class="part-qty">×1</div>
+        <div class="part-detail">Hex Inverter (NOT gate)</div><div class="part-cost">~$0.70</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon"><svg viewBox="0 0 70 70" width="70" height="70"><rect x="16" y="30" width="32" height="16" rx="4" fill="#457b9d" stroke="#1d3557" stroke-width="1.5"/><text x="32" y="41" font-size="9" fill="#fff" text-anchor="middle">SW</text><line x1="10" y1="38" x2="16" y2="38" stroke="#333" stroke-width="2"/><line x1="48" y1="38" x2="54" y2="38" stroke="#333" stroke-width="2"/></svg></div>
+        <div class="part-name">Toggle Switch</div><div class="part-qty">×3</div>
+        <div class="part-detail">SPST — one per zone</div><div class="part-cost">~$2.00</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon"><svg viewBox="0 0 70 70" width="70" height="70"><line x1="5" y1="35" x2="18" y2="35" stroke="#555" stroke-width="2"/><rect x="18" y="28" width="34" height="14" rx="4" fill="#d4a017" stroke="#8B7355" stroke-width="1.5"/><text x="35" y="39" font-size="9" fill="#333" text-anchor="middle" font-weight="bold">10kΩ</text><line x1="52" y1="35" x2="65" y2="35" stroke="#555" stroke-width="2"/></svg></div>
+        <div class="part-name">10kΩ Resistor</div><div class="part-qty">×3</div>
+        <div class="part-detail">Pull-down (one per sensor)</div><div class="part-cost">~$0.10</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon"><svg viewBox="0 0 70 70" width="70" height="70"><line x1="5" y1="35" x2="18" y2="35" stroke="#555" stroke-width="2"/><rect x="18" y="28" width="34" height="14" rx="4" fill="#d4a017" stroke="#8B7355" stroke-width="1.5"/><text x="35" y="39" font-size="9" fill="#333" text-anchor="middle" font-weight="bold">330Ω</text><line x1="52" y1="35" x2="65" y2="35" stroke="#555" stroke-width="2"/></svg></div>
+        <div class="part-name">330Ω Resistor</div><div class="part-qty">×4</div>
+        <div class="part-detail">LED current limiters</div><div class="part-cost">~$0.15</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon"><svg viewBox="0 0 70 70" width="70" height="70"><polygon points="30,18 30,46 52,32" fill="#ef233c" stroke="#c0392b" stroke-width="2"/><line x1="52" y1="22" x2="52" y2="42" stroke="#c0392b" stroke-width="2.5"/><line x1="30" y1="32" x2="14" y2="32" stroke="#555" stroke-width="2"/><line x1="52" y1="32" x2="60" y2="32" stroke="#555" stroke-width="2"/></svg></div>
+        <div class="part-name">Red LED</div><div class="part-qty">×1</div>
+        <div class="part-detail">Main alarm indicator</div><div class="part-cost">~$0.10</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon"><svg viewBox="0 0 70 70" width="70" height="70"><polygon points="30,18 30,46 52,32" fill="#ffd166" stroke="#d4a017" stroke-width="2"/><line x1="52" y1="22" x2="52" y2="42" stroke="#d4a017" stroke-width="2.5"/><line x1="30" y1="32" x2="14" y2="32" stroke="#555" stroke-width="2"/><line x1="52" y1="32" x2="60" y2="32" stroke="#555" stroke-width="2"/><circle cx="44" cy="18" r="8" fill="#ff6b35" stroke="#d35400" stroke-width="1.5"/></svg></div>
+        <div class="part-name">Priority LEDs</div><div class="part-qty">×3</div>
+        <div class="part-detail">Red, Orange, Yellow — one per zone</div><div class="part-cost">~$0.20</div>
+      </div>
+    </div>
+    <div class="cost-total">Total Cost: <span>~$18–20 with buzzer, breadboard and wires included</span></div>
+  </div>
+</div>
+
+<!-- PAGE 4 — IC PINOUTS -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-num">4</div>
+    <div><div class="page-title">Know All 3 ICs — Pinouts</div><div class="page-sub">All three chips follow the same power pin layout: Pin 14 = VCC, Pin 7 = GND</div></div>
+  </div>
+  <div class="page-body">
+    <div class="step-warn">⚠️ All three chips (74HC08, 74HC32, 74HC04) use the same DIP-14 package. The only difference is what happens inside. Always read the label!</div>
+    <div class="step-svg">
+      <svg viewBox="0 0 680 200" width="100%" style="max-width:660px">
+        <!-- CHIP 1 - 74HC08 AND -->
+        <rect x="20" y="30" width="140" height="140" rx="6" fill="#1a1a2e" stroke="#457b9d" stroke-width="2"/>
+        <path d="M55,30 Q90,18 125,30" fill="#457b9d" stroke="#a8dadc" stroke-width="1.5"/>
+        <text x="90" y="70" font-size="11" fill="#a8dadc" text-anchor="middle" font-weight="bold">74HC08</text>
+        <text x="90" y="85" font-size="10" fill="#457b9d" text-anchor="middle">AND gate</text>
+        <!-- Gate symbol inside -->
+        <rect x="68" y="96" width="30" height="22" rx="0" fill="none" stroke="#06d6a0" stroke-width="1"/>
+        <rect x="68" y="96" width="20" height="22" rx="0" fill="none" stroke="#06d6a0" stroke-width="1"/>
+        <path d="M88,96 Q100,96 100,107 Q100,118 88,118" fill="none" stroke="#06d6a0" stroke-width="1.5"/>
+        <!-- Pins -->
+        <text x="18" y="53" font-size="9" fill="#f4a261" text-anchor="end">1 A1 IN</text>
+        <text x="18" y="78" font-size="9" fill="#f4a261" text-anchor="end">2 B1 IN</text>
+        <text x="18" y="103" font-size="9" fill="#ef233c" text-anchor="end">3 Y1 OUT</text>
+        <text x="18" y="128" font-size="9" fill="#666" text-anchor="end">4,5,6...</text>
+        <text x="18" y="153" font-size="9" fill="#2980b9" text-anchor="end">7 GND</text>
+        <text x="162" y="53" font-size="9" fill="#ef233c">14 VCC</text>
+        <line x1="20" y1="50" x2="5" y2="50" stroke="#f4a261" stroke-width="1.5"/>
+        <line x1="20" y1="75" x2="5" y2="75" stroke="#f4a261" stroke-width="1.5"/>
+        <line x1="20" y1="100" x2="5" y2="100" stroke="#ef233c" stroke-width="1.5"/>
+        <line x1="20" y1="150" x2="5" y2="150" stroke="#2980b9" stroke-width="1.5"/>
+        <line x1="160" y1="50" x2="175" y2="50" stroke="#ef233c" stroke-width="1.5"/>
+
+        <!-- CHIP 2 - 74HC32 OR -->
+        <rect x="270" y="30" width="140" height="140" rx="6" fill="#16213e" stroke="#06d6a0" stroke-width="2"/>
+        <path d="M305,30 Q340,18 375,30" fill="#06d6a0" stroke="#a8dadc" stroke-width="1.5"/>
+        <text x="340" y="70" font-size="11" fill="#06d6a0" text-anchor="middle" font-weight="bold">74HC32</text>
+        <text x="340" y="85" font-size="10" fill="#457b9d" text-anchor="middle">OR gate</text>
+        <!-- OR symbol inside -->
+        <path d="M308,96 Q320,96 328,107 Q320,118 308,118" fill="none" stroke="#06d6a0" stroke-width="1.5"/>
+        <line x1="308" y1="96" x2="308" y2="118" stroke="#06d6a0" stroke-width="1.5"/>
+        <line x1="270" y1="50" x2="255" y2="50" stroke="#f4a261" stroke-width="1.5"/>
+        <line x1="270" y1="75" x2="255" y2="75" stroke="#f4a261" stroke-width="1.5"/>
+        <line x1="270" y1="100" x2="255" y2="100" stroke="#ef233c" stroke-width="1.5"/>
+        <line x1="270" y1="150" x2="255" y2="150" stroke="#2980b9" stroke-width="1.5"/>
+        <line x1="410" y1="50" x2="425" y2="50" stroke="#ef233c" stroke-width="1.5"/>
+        <text x="268" y="53" font-size="9" fill="#f4a261" text-anchor="end">1 A1 IN</text>
+        <text x="268" y="78" font-size="9" fill="#f4a261" text-anchor="end">2 B1 IN</text>
+        <text x="268" y="103" font-size="9" fill="#ef233c" text-anchor="end">3 Y1 OUT</text>
+        <text x="268" y="153" font-size="9" fill="#2980b9" text-anchor="end">7 GND</text>
+        <text x="412" y="53" font-size="9" fill="#ef233c">14 VCC</text>
+
+        <!-- CHIP 3 - 74HC04 NOT -->
+        <rect x="520" y="30" width="140" height="140" rx="6" fill="#2c0a37" stroke="#9b59b6" stroke-width="2"/>
+        <path d="M555,30 Q590,18 625,30" fill="#9b59b6" stroke="#c39bd3" stroke-width="1.5"/>
+        <text x="590" y="70" font-size="11" fill="#c39bd3" text-anchor="middle" font-weight="bold">74HC04</text>
+        <text x="590" y="85" font-size="10" fill="#9b59b6" text-anchor="middle">NOT / Inverter</text>
+        <!-- NOT symbol inside -->
+        <polygon points="563,96 563,118 580,107" fill="none" stroke="#c39bd3" stroke-width="1.5"/>
+        <circle cx="583" cy="107" r="3" fill="none" stroke="#c39bd3" stroke-width="1.5"/>
+        <line x1="520" y1="50" x2="505" y2="50" stroke="#f4a261" stroke-width="1.5"/>
+        <line x1="520" y1="75" x2="505" y2="75" stroke="#ef233c" stroke-width="1.5"/>
+        <line x1="520" y1="150" x2="505" y2="150" stroke="#2980b9" stroke-width="1.5"/>
+        <line x1="660" y1="50" x2="675" y2="50" stroke="#ef233c" stroke-width="1.5"/>
+        <text x="518" y="53" font-size="9" fill="#f4a261" text-anchor="end">1 IN</text>
+        <text x="518" y="78" font-size="9" fill="#ef233c" text-anchor="end">2 OUT</text>
+        <text x="518" y="153" font-size="9" fill="#2980b9" text-anchor="end">7 GND</text>
+        <text x="662" y="53" font-size="9" fill="#ef233c">14 VCC</text>
+      </svg>
+    </div>
+
+    <div class="pin-box">
+      <strong>Memory trick:</strong><br>
+      74HC<span style="color:#ef233c">08</span> = AND (8 looks like two circles joined — AND gate!)<br>
+      74HC<span style="color:#06d6a0">32</span> = OR (32 gates... just remember OR comes AFTER AND alphabetically)<br>
+      74HC<span style="color:#9b59b6">04</span> = NOT (04 = zero/none = NOT nothing = inverter!)
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 5 — BUILD STEPS -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-num">5</div>
+    <div><div class="page-title">Build Steps — Work in Order</div><div class="page-sub">Build one section at a time and test before moving on</div></div>
+  </div>
+  <div class="page-body">
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Place All 3 ICs on the Breadboard</div>
+        <div class="step-body">Space the three ICs at least 5 rows apart so you have room to wire between them. All three straddle the centre gap. Notch facing left on all three.</div>
+        <div class="step-tip">💡 Label a sticky note next to each: "AND", "OR", "NOT" so you never mix them up while wiring.</div>
+        <div class="step-svg">
+          <svg viewBox="0 0 580 100" width="100%" style="max-width:560px">
+            <rect x="10" y="10" width="560" height="80" rx="6" fill="#f4a261" opacity="0.2" stroke="#d35400" stroke-width="1"/>
+            <rect x="30" y="20" width="90" height="60" rx="4" fill="#1a1a2e" stroke="#457b9d" stroke-width="2"/>
+            <text x="75" y="46" font-size="10" fill="#a8dadc" text-anchor="middle" font-weight="bold">74HC08</text>
+            <text x="75" y="60" font-size="9" fill="#457b9d" text-anchor="middle">AND</text>
+            <rect x="245" y="20" width="90" height="60" rx="4" fill="#16213e" stroke="#06d6a0" stroke-width="2"/>
+            <text x="290" y="46" font-size="10" fill="#06d6a0" text-anchor="middle" font-weight="bold">74HC32</text>
+            <text x="290" y="60" font-size="9" fill="#457b9d" text-anchor="middle">OR</text>
+            <rect x="460" y="20" width="90" height="60" rx="4" fill="#2c0a37" stroke="#9b59b6" stroke-width="2"/>
+            <text x="505" y="46" font-size="10" fill="#c39bd3" text-anchor="middle" font-weight="bold">74HC04</text>
+            <text x="505" y="60" font-size="9" fill="#9b59b6" text-anchor="middle">NOT</text>
+            <!-- Spacing arrows -->
+            <text x="165" y="55" font-size="11" fill="#666" text-anchor="middle">← 5+ rows →</text>
+            <text x="375" y="55" font-size="11" fill="#666" text-anchor="middle">← 5+ rows →</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Power All 3 ICs</div>
+        <div class="step-body">Each of the 3 ICs must have its own power and ground connections. Do not skip any IC.</div>
+        <table class="wire-table">
+          <tr><th>IC</th><th>Pin 14 → +5V</th><th>Pin 7 → GND</th></tr>
+          <tr><td>74HC08 (AND)</td><td>Red wire to + rail</td><td>Black wire to – rail</td></tr>
+          <tr><td>74HC32 (OR)</td><td>Red wire to + rail</td><td>Black wire to – rail</td></tr>
+          <tr><td>74HC04 (NOT)</td><td>Red wire to + rail</td><td>Black wire to – rail</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Wire All 3 Sensor Switches (with Pull-Downs)</div>
+        <div class="step-body">Each switch uses the same pattern: +5V → Switch → junction point (with 10kΩ to GND). From the junction point, run a wire to your logic circuit.</div>
+        <table class="wire-table">
+          <tr><th>Zone</th><th>Switch</th><th>Junction wire goes to...</th></tr>
+          <tr><td>Zone 1 (Z1)</td><td>SW1: +5V → SW → junction + 10kΩ to GND</td><td>Zone1 signal bus (to OR gate AND to NOT gate)</td></tr>
+          <tr><td>Zone 2 (Z2)</td><td>SW2: +5V → SW → junction + 10kΩ to GND</td><td>Zone2 signal bus (to OR gate AND to NOT gate)</td></tr>
+          <tr><td>Zone 3 (Z3)</td><td>SW3: +5V → SW → junction + 10kΩ to GND</td><td>Zone3 signal bus (to OR gate)</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Build the Alarm OR Gate (Alarm LED)</div>
+        <div class="step-body">The alarm LED should fire if ANY zone is active. Chain two 2-input OR gates:<br>
+          <br>• Gate 1 (74HC32): Input A = Zone1, Input B = Zone2. Output = (Z1 OR Z2)<br>
+          • Gate 2 (74HC32): Input A = Gate1 output, Input B = Zone3. Output = Alarm<br>
+          • Connect Alarm output → 330Ω → Red LED (alarm) → GND
+        </div>
+        <div class="step-warn">⚠️ The 74HC32 has 4 gates. You're using gates 1 and 2 here. Pins: Gate1 = 1,2,3. Gate2 = 4,5,6.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="step-title">Wire Zone 1 Priority LED (Direct)</div>
+        <div class="step-body">No logic needed here. Zone 1 always has highest priority and simply connects directly:<br><br>
+          Zone1 signal → 330Ω resistor → Red Priority LED (Z1) → GND
+        </div>
+        <div class="step-tip">💡 Test this step alone first. Zone 1 switch ON → Red priority LED ON. Works? Good — move on.</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">6</div>
+      <div class="step-content">
+        <div class="step-title">Wire Zone 2 Priority LED (AND + NOT)</div>
+        <div class="step-body">Zone 2 only shows if Zone 1 is NOT active:<br><br>
+          1. Zone1 signal → NOT gate (74HC04 Pin 1). Output (NOT Z1) comes out Pin 2.<br>
+          2. NOT Z1 output and Zone2 signal → AND gate (74HC08 Pin 4, Pin 5). Output at Pin 6.<br>
+          3. Pin 6 → 330Ω → Orange Priority LED (Z2) → GND
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">7</div>
+      <div class="step-content">
+        <div class="step-title">Wire Zone 3 Priority LED (AND + 2× NOT)</div>
+        <div class="step-body">Zone 3 only shows if both Zone 1 AND Zone 2 are NOT active:<br><br>
+          1. Zone1 → NOT gate (74HC04 Pin 3→4). Output = NOT Z1<br>
+          2. Zone2 → NOT gate (74HC04 Pin 5→6). Output = NOT Z2<br>
+          3. NOT Z1 and NOT Z2 → AND gate 1 (74HC08, Gate 1). Output = NOT Z1 AND NOT Z2<br>
+          4. That AND output + Zone3 signal → AND gate 2 (74HC08, Gate 2). Output = Zone3 LED signal<br>
+          5. Output → 330Ω → Yellow Priority LED (Z3) → GND
+        </div>
+        <div class="step-warn">⚠️ The 74HC04 has 6 NOT gates. Each is: Pin A (IN) and Pin B (OUT) pairs: 1→2, 3→4, 5→6, 9→8, 11→10, 13→12.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 6 — CIRCUIT DIAGRAM -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-num">6</div>
+    <div><div class="page-title">Complete Circuit Schematic</div><div class="page-sub">Full system view — all gates, all connections</div></div>
+  </div>
+  <div class="page-body">
+    <div class="step-svg" style="padding:20px">
+      <svg viewBox="0 0 720 420" width="100%" style="max-width:700px">
+        <!-- Power rails -->
+        <line x1="10" y1="20" x2="710" y2="20" stroke="#ef233c" stroke-width="2.5"/>
+        <line x1="10" y1="400" x2="710" y2="400" stroke="#1d3557" stroke-width="2.5"/>
+        <text x="18" y="16" font-size="11" fill="#ef233c" font-weight="bold">+5V</text>
+        <text x="18" y="398" font-size="11" fill="#1d3557" font-weight="bold">GND</text>
+
+        <!-- SWITCH 1 (Z1) -->
+        <line x1="60" y1="20" x2="60" y2="50" stroke="#ef233c" stroke-width="1.5"/>
+        <rect x="46" y="50" width="28" height="16" rx="3" fill="#457b9d"/>
+        <text x="60" y="62" font-size="8" fill="#fff" text-anchor="middle" font-weight="bold">SW1</text>
+        <line x1="60" y1="66" x2="60" y2="88" stroke="#ef233c" stroke-width="1.5"/>
+        <circle cx="60" cy="88" r="4" fill="#ef233c"/>
+        <!-- pull-down 1 -->
+        <line x1="60" y1="92" x2="60" y2="110" stroke="#333" stroke-width="1.5"/>
+        <rect x="50" y="110" width="20" height="30" rx="3" fill="#d4a017"/><text x="60" y="128" font-size="7" fill="#333" text-anchor="middle">10k</text>
+        <line x1="60" y1="140" x2="60" y2="400" stroke="#1d3557" stroke-width="1.5"/>
+
+        <!-- SWITCH 2 (Z2) -->
+        <line x1="130" y1="20" x2="130" y2="50" stroke="#ef233c" stroke-width="1.5"/>
+        <rect x="116" y="50" width="28" height="16" rx="3" fill="#457b9d"/>
+        <text x="130" y="62" font-size="8" fill="#fff" text-anchor="middle" font-weight="bold">SW2</text>
+        <line x1="130" y1="66" x2="130" y2="88" stroke="#ef233c" stroke-width="1.5"/>
+        <circle cx="130" cy="88" r="4" fill="#ff6b35"/>
+        <line x1="130" y1="92" x2="130" y2="110" stroke="#333" stroke-width="1.5"/>
+        <rect x="120" y="110" width="20" height="30" rx="3" fill="#d4a017"/><text x="130" y="128" font-size="7" fill="#333" text-anchor="middle">10k</text>
+        <line x1="130" y1="140" x2="130" y2="400" stroke="#1d3557" stroke-width="1.5"/>
+
+        <!-- SWITCH 3 (Z3) -->
+        <line x1="200" y1="20" x2="200" y2="50" stroke="#ef233c" stroke-width="1.5"/>
+        <rect x="186" y="50" width="28" height="16" rx="3" fill="#457b9d"/>
+        <text x="200" y="62" font-size="8" fill="#fff" text-anchor="middle" font-weight="bold">SW3</text>
+        <line x1="200" y1="66" x2="200" y2="88" stroke="#ef233c" stroke-width="1.5"/>
+        <circle cx="200" cy="88" r="4" fill="#856404"/>
+        <line x1="200" y1="92" x2="200" y2="110" stroke="#333" stroke-width="1.5"/>
+        <rect x="190" y="110" width="20" height="30" rx="3" fill="#d4a017"/><text x="200" y="128" font-size="7" fill="#333" text-anchor="middle">10k</text>
+        <line x1="200" y1="140" x2="200" y2="400" stroke="#1d3557" stroke-width="1.5"/>
+
+        <!-- OR gate 1 (Z1+Z2) -->
+        <line x1="60" y1="88" x2="60" y2="165" stroke="#ef233c" stroke-width="1.5"/>
+        <line x1="60" y1="165" x2="268" y2="165" stroke="#ef233c" stroke-width="1.5"/>
+        <line x1="130" y1="88" x2="130" y2="178" stroke="#ff6b35" stroke-width="1.5"/>
+        <line x1="130" y1="178" x2="268" y2="178" stroke="#ff6b35" stroke-width="1.5"/>
+        <rect x="268" y="158" width="52" height="28" rx="4" fill="#16213e" stroke="#06d6a0" stroke-width="1.5"/>
+        <text x="294" y="175" font-size="9" fill="#06d6a0" text-anchor="middle" font-weight="bold">OR₁</text>
+        <line x1="320" y1="171" x2="340" y2="171" stroke="#06d6a0" stroke-width="1.5"/>
+
+        <!-- OR gate 2 (prev + Z3) -->
+        <line x1="340" y1="171" x2="340" y2="185" stroke="#06d6a0" stroke-width="1.5"/>
+        <line x1="200" y1="88" x2="200" y2="198" stroke="#856404" stroke-width="1.5"/>
+        <line x1="200" y1="198" x2="340" y2="198" stroke="#856404" stroke-width="1.5"/>
+        <rect x="340" y="158" width="52" height="48" rx="4" fill="#16213e" stroke="#06d6a0" stroke-width="1.5"/>
+        <text x="366" y="185" font-size="9" fill="#06d6a0" text-anchor="middle" font-weight="bold">OR₂</text>
+        <line x1="392" y1="182" x2="415" y2="182" stroke="#06d6a0" stroke-width="1.5"/>
+
+        <!-- Alarm LED -->
+        <rect x="415" y="170" width="28" height="24" rx="3" fill="#d4a017"/>
+        <text x="429" y="185" font-size="7" fill="#333" text-anchor="middle" font-weight="bold">330Ω</text>
+        <line x1="443" y1="182" x2="460" y2="182" stroke="#06d6a0" stroke-width="1.5"/>
+        <circle cx="472" cy="182" r="10" fill="#2c2c2c" stroke="#555" stroke-width="1.5"/>
+        <text x="472" y="178" font-size="7" fill="#fff" text-anchor="middle">ALM</text>
+        <text x="472" y="188" font-size="7" fill="#fff" text-anchor="middle">LED</text>
+        <line x1="482" y1="182" x2="495" y2="182" stroke="#333" stroke-width="1.5"/>
+        <line x1="495" y1="182" x2="495" y2="400" stroke="#1d3557" stroke-width="1.5"/>
+
+        <!-- Z1 LED direct -->
+        <line x1="60" y1="88" x2="60" y2="225" stroke="#ef233c" stroke-width="1.5" stroke-dasharray="none"/>
+        <line x1="60" y1="225" x2="415" y2="225" stroke="#ef233c" stroke-width="1.5"/>
+        <rect x="415" y="214" width="28" height="22" rx="3" fill="#d4a017"/>
+        <text x="429" y="228" font-size="7" fill="#333" text-anchor="middle">330Ω</text>
+        <line x1="443" y1="225" x2="458" y2="225" stroke="#ef233c" stroke-width="1.5"/>
+        <circle cx="469" cy="225" r="10" fill="#ef233c" stroke="#c0392b" stroke-width="1.5"/>
+        <text x="469" y="229" font-size="7" fill="#fff" text-anchor="middle" font-weight="bold">Z1</text>
+        <line x1="479" y1="225" x2="510" y2="225" stroke="#333" stroke-width="1.5"/>
+        <line x1="510" y1="225" x2="510" y2="400" stroke="#1d3557" stroke-width="1.5"/>
+
+        <!-- NOT gate for Z1 (input to Z2 masking) -->
+        <line x1="60" y1="270" x2="60" y2="260" stroke="#ef233c" stroke-width="1.5"/>
+        <line x1="60" y1="88" x2="60" y2="260" stroke="none"/>
+        <line x1="60" y1="260" x2="268" y2="260" stroke="#ef233c" stroke-width="1.5"/>
+        <rect x="268" y="252" width="38" height="18" rx="3" fill="#2c0a37" stroke="#9b59b6" stroke-width="1.5"/>
+        <text x="287" y="264" font-size="8" fill="#c39bd3" text-anchor="middle" font-weight="bold">NOT</text>
+        <circle cx="309" cy="261" r="3" fill="none" stroke="#9b59b6" stroke-width="1.5"/>
+
+        <!-- AND gate Z2 -->
+        <line x1="312" y1="261" x2="328" y2="261" stroke="#9b59b6" stroke-width="1.5"/>
+        <line x1="130" y1="88" x2="130" y2="272" stroke="#ff6b35" stroke-width="1.5"/>
+        <line x1="130" y1="272" x2="328" y2="272" stroke="#ff6b35" stroke-width="1.5"/>
+        <rect x="328" y="252" width="52" height="28" rx="4" fill="#1a1a2e" stroke="#457b9d" stroke-width="1.5"/>
+        <text x="354" y="269" font-size="9" fill="#a8dadc" text-anchor="middle" font-weight="bold">AND₁</text>
+        <line x1="380" y1="266" x2="410" y2="266" stroke="#ff6b35" stroke-width="1.5"/>
+        <rect x="410" y="256" width="28" height="22" rx="3" fill="#d4a017"/>
+        <text x="424" y="270" font-size="7" fill="#333" text-anchor="middle">330Ω</text>
+        <line x1="438" y1="266" x2="452" y2="266" stroke="#ff6b35" stroke-width="1.5"/>
+        <circle cx="463" cy="266" r="10" fill="#ff6b35" stroke="#d35400" stroke-width="1.5"/>
+        <text x="463" y="270" font-size="7" fill="#fff" text-anchor="middle" font-weight="bold">Z2</text>
+        <line x1="473" y1="266" x2="525" y2="266" stroke="#333" stroke-width="1.5"/>
+        <line x1="525" y1="266" x2="525" y2="400" stroke="#1d3557" stroke-width="1.5"/>
+
+        <!-- NOT gates for Z3 -->
+        <line x1="60" y1="310" x2="268" y2="310" stroke="#ef233c" stroke-width="1.5"/>
+        <rect x="268" y="302" width="38" height="18" rx="3" fill="#2c0a37" stroke="#9b59b6" stroke-width="1.5"/>
+        <text x="287" y="314" font-size="8" fill="#c39bd3" text-anchor="middle" font-weight="bold">NOT</text>
+        <circle cx="309" cy="311" r="3" fill="none" stroke="#9b59b6" stroke-width="1.5"/>
+
+        <line x1="130" y1="320" x2="268" y2="320" stroke="#ff6b35" stroke-width="1.5"/>
+        <rect x="268" y="326" width="38" height="18" rx="3" fill="#2c0a37" stroke="#9b59b6" stroke-width="1.5"/>
+        <text x="287" y="338" font-size="8" fill="#c39bd3" text-anchor="middle" font-weight="bold">NOT</text>
+        <circle cx="309" cy="335" r="3" fill="none" stroke="#9b59b6" stroke-width="1.5"/>
+
+        <!-- AND gate chain for Z3 -->
+        <line x1="312" y1="311" x2="328" y2="311" stroke="#9b59b6" stroke-width="1.5"/>
+        <line x1="312" y1="335" x2="328" y2="335" stroke="#9b59b6" stroke-width="1.5"/>
+        <rect x="328" y="302" width="52" height="42" rx="4" fill="#1a1a2e" stroke="#457b9d" stroke-width="1.5"/>
+        <text x="354" y="326" font-size="9" fill="#a8dadc" text-anchor="middle" font-weight="bold">AND₂</text>
+        <line x1="380" y1="323" x2="395" y2="323" stroke="#9b59b6" stroke-width="1.5"/>
+        <line x1="200" y1="355" x2="395" y2="355" stroke="#856404" stroke-width="1.5"/>
+        <rect x="395" y="310" width="52" height="52" rx="4" fill="#1a1a2e" stroke="#457b9d" stroke-width="1.5"/>
+        <text x="421" y="339" font-size="9" fill="#a8dadc" text-anchor="middle" font-weight="bold">AND₃</text>
+        <line x1="447" y1="336" x2="462" y2="336" stroke="#856404" stroke-width="1.5"/>
+        <circle cx="473" cy="336" r="10" fill="#ffd166" stroke="#d4a017" stroke-width="1.5"/>
+        <text x="473" y="340" font-size="7" fill="#333" text-anchor="middle" font-weight="bold">Z3</text>
+        <line x1="483" y1="336" x2="540" y2="336" stroke="#333" stroke-width="1.5"/>
+        <line x1="540" y1="336" x2="540" y2="400" stroke="#1d3557" stroke-width="1.5"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 7 — TESTING -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-num">7</div>
+    <div><div class="page-title">Testing — The Priority Tests Matter Most</div><div class="page-sub">Run these in order — each builds on the last</div></div>
+  </div>
+  <div class="page-body">
+    <h3 style="margin-bottom:12px;color:var(--dark)">Test Sequence</h3>
+    <table class="test-table">
+      <tr><th>Test</th><th>Z1</th><th>Z2</th><th>Z3</th><th>Alarm</th><th>Z1 LED</th><th>Z2 LED</th><th>Z3 LED</th></tr>
+      <tr><td>1 – None</td><td>OFF</td><td>OFF</td><td>OFF</td><td>⬛</td><td>⬛</td><td>⬛</td><td>⬛</td></tr>
+      <tr style="background:#ffe5e9"><td>2 – Z1 only</td><td><b>ON</b></td><td>OFF</td><td>OFF</td><td>🔴</td><td>🔴</td><td>⬛</td><td>⬛</td></tr>
+      <tr style="background:#fff0e8"><td>3 – Z2 only</td><td>OFF</td><td><b>ON</b></td><td>OFF</td><td>🟠</td><td>⬛</td><td>🟠</td><td>⬛</td></tr>
+      <tr style="background:#fffde8"><td>4 – Z3 only</td><td>OFF</td><td>OFF</td><td><b>ON</b></td><td>🟡</td><td>⬛</td><td>⬛</td><td>🟡</td></tr>
+      <tr style="background:#ffe5e9"><td>5 – Z1+Z2</td><td><b>ON</b></td><td><b>ON</b></td><td>OFF</td><td>🔴</td><td>🔴 only</td><td>⬛</td><td>⬛</td></tr>
+      <tr style="background:#ffe5e9"><td>6 – Z1+Z3</td><td><b>ON</b></td><td>OFF</td><td><b>ON</b></td><td>🔴</td><td>🔴 only</td><td>⬛</td><td>⬛</td></tr>
+      <tr style="background:#fff0e8"><td>7 – Z2+Z3</td><td>OFF</td><td><b>ON</b></td><td><b>ON</b></td><td>🟠</td><td>⬛</td><td>🟠 only</td><td>⬛</td></tr>
+      <tr style="background:#ffe5e9"><td>8 – ALL ON</td><td><b>ON</b></td><td><b>ON</b></td><td><b>ON</b></td><td>🔴</td><td>🔴 only</td><td>⬛</td><td>⬛</td></tr>
+    </table>
+
+    <h3 style="margin:20px 0 10px;color:var(--dark)">Troubleshooting</h3>
+    <table class="trouble-table">
+      <tr><th>Problem</th><th>Cause</th><th>Fix</th></tr>
+      <tr><td>No LEDs ever light</td><td>Missing IC power (VCC/GND)</td><td>Check all 3 ICs: Pin 14 = +5V, Pin 7 = GND</td></tr>
+      <tr><td>Alarm LED always ON</td><td>Floating sensor input</td><td>Verify all 3 pull-down resistors (10kΩ to GND)</td></tr>
+      <tr><td>Wrong priority LED lights</td><td>NOT gate wiring wrong</td><td>Re-check 74HC04 connections: Pin 1→2, 3→4, 5→6</td></tr>
+      <tr><td>Z2 lights with Z1 active</td><td>Missing NOT gate before Z2 AND</td><td>Zone1 must pass through NOT gate before reaching Z2's AND gate</td></tr>
+      <tr><td>Alarm not triggering on Z3</td><td>OR chain not connected</td><td>Verify OR gate 2 gets both OR1 output AND Zone3 signal</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE 8 — CHECKLIST -->
+<div class="page">
+  <div class="page-header">
+    <div class="page-num">8</div>
+    <div><div class="page-title">Final Pre-Power Checklist</div><div class="page-sub">Tick every single box before connecting power</div></div>
+  </div>
+  <div class="page-body">
+    <ul class="checklist">
+      <li>74HC08 (AND) — inserted notch-left, Pin 14 → +5V, Pin 7 → GND</li>
+      <li>74HC32 (OR) — inserted notch-left, Pin 14 → +5V, Pin 7 → GND</li>
+      <li>74HC04 (NOT) — inserted notch-left, Pin 14 → +5V, Pin 7 → GND</li>
+      <li>Switch 1 (Zone 1): +5V → SW → junction, 10kΩ from junction to GND</li>
+      <li>Switch 2 (Zone 2): +5V → SW → junction, 10kΩ from junction to GND</li>
+      <li>Switch 3 (Zone 3): +5V → SW → junction, 10kΩ from junction to GND</li>
+      <li>OR gate chain: Zone1 + Zone2 → OR1 → OR2 ← Zone3 → Alarm LED via 330Ω</li>
+      <li>Zone1 signal → 330Ω → Red Priority LED → GND (direct connection)</li>
+      <li>Zone1 → NOT gate → AND gate (with Zone2) → 330Ω → Orange LED → GND</li>
+      <li>Zone1 → NOT gate AND Zone2 → NOT gate → AND → AND (with Zone3) → 330Ω → Yellow LED → GND</li>
+      <li>All LEDs have 330Ω current-limiting resistors</li>
+      <li>Power source is 5V DC — not 9V direct!</li>
+      <li>No wires crossing the centre gap accidentally</li>
+    </ul>
+    <div class="cost-total" style="margin-top:24px">✅ All boxes checked? Time to power up and test your priority encoder!</div>
+    <div class="step-tip" style="margin-top:16px">💡 <strong>Next upgrade:</strong> Add a 4th zone using the remaining gates in your ICs — or add a key-switch ARM/DISARM so the alarm only monitors when you're away.</div>
+  </div>
+</div>
+
+</body>
+</html>
